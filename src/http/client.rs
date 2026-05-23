@@ -76,6 +76,7 @@ pub struct Configuration<'a> {
     pub buffer_size_tx: Option<usize>,
     pub timeout: Option<core::time::Duration>,
     pub follow_redirects_policy: FollowRedirectsPolicy,
+    pub server_certificate: Option<X509<'static>>,
     pub client_certificate: Option<X509<'static>>,
     pub server_certificate: Option<X509<'static>>,
     pub private_key: Option<PrivateKeyProvider<'a>>,
