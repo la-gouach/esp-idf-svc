@@ -28,7 +28,7 @@ use crate::handle::RawHandle;
 use crate::io::EspIOError;
 use crate::private::common::Newtype;
 use crate::private::cstr::*;
-use crate::tls::X509;
+use crate::tls::{PrivateKeyProvider, X509};
 
 pub use embedded_svc::http::client::{Connection, Request, Response};
 
@@ -71,14 +71,14 @@ pub enum FollowRedirectsPolicy {
 }
 
 #[derive(Copy, Clone, Debug, Default)]
-pub struct Configuration {
+pub struct Configuration<'a> {
     pub buffer_size: Option<usize>,
     pub buffer_size_tx: Option<usize>,
     pub timeout: Option<core::time::Duration>,
     pub follow_redirects_policy: FollowRedirectsPolicy,
     pub client_certificate: Option<X509<'static>>,
     pub server_certificate: Option<X509<'static>>,
-    pub private_key: Option<X509<'static>>,
+    pub private_key: Option<PrivateKeyProvider<'a>>,
     pub use_global_ca_store: bool,
     pub crt_bundle_attach: Option<unsafe extern "C" fn(conf: *mut core::ffi::c_void) -> esp_err_t>,
     pub raw_request_body: bool,
@@ -109,7 +109,7 @@ pub struct EspHttpConnection {
 }
 
 impl EspHttpConnection {
-    pub fn new(configuration: &Configuration) -> Result<Self, EspError> {
+    pub fn new(configuration: &Configuration<'_>) -> Result<Self, EspError> {
         let event_handler = Box::new(None);
 
         #[allow(clippy::manual_c_str_literals)]
@@ -166,8 +166,16 @@ impl EspHttpConnection {
 
             native_config.client_cert_len = cert.as_esp_idf_raw_len();
 
-            native_config.client_key_pem = private_key.as_esp_idf_raw_ptr() as _;
-            native_config.client_key_len = private_key.as_esp_idf_raw_len();
+            match configuration.private_key {
+                PrivateKey::Pem(private_key) => {
+                    native_config.client_key_pem = private_key.as_esp_idf_raw_ptr() as _;
+                    native_config.client_key_len = private_key.as_esp_idf_raw_len();
+                }
+                #[cfg(all(esp_idf_comp_espressif__esp_secure_cert_mgr_enabled, esp32s3))]
+                PrivateKey::DigitalSignature(ds) => {
+                    native_config.ds_data = unsafe { ds.as_ptr() };
+                }
+            }
         }
 
         if configuration.keep_alive_enable {
