@@ -206,12 +206,12 @@ impl<'a> TryFrom<&'a MqttClientConfiguration<'a>>
             c_conf.client_cert_len = cert.as_esp_idf_raw_len();
 
             match private_key {
-                PrivateKey::Pem(key) => {
+                PrivateKeyProvider::Pem(key) => {
                     c_conf.client_key_pem = key.as_esp_idf_raw_ptr() as _;
                     c_conf.client_key_len = key.as_esp_idf_raw_len();
                 }
                 #[cfg(all(esp_idf_comp_espressif__esp_secure_cert_mgr_enabled, esp32s3))]
-                PrivateKey::DigitalSignature(_) => {
+                PrivateKeyProvider::DigitalSignature(_) => {
                     c_conf.credentials.authentication.ds_data = ds.as_ptr() as _;
                 }
             }
@@ -323,14 +323,14 @@ impl<'a> TryFrom<&'a MqttClientConfiguration<'a>>
             c_conf.credentials.authentication.certificate = cert.as_esp_idf_raw_ptr() as _;
             c_conf.credentials.authentication.certificate_len = cert.as_esp_idf_raw_len();
 
-            match conf.private_key {
-                PrivateKey::Pem(key) => {
+            match private_key {
+                PrivateKeyProvider::Pem(key) => {
                     c_conf.credentials.authentication.key = key.as_esp_idf_raw_ptr() as _;
                     c_conf.credentials.authentication.key_len = key.as_esp_idf_raw_len();
                 }
                 #[cfg(all(esp_idf_comp_espressif__esp_secure_cert_mgr_enabled, esp32s3))]
-                PrivateKey::DigitalSignature(ds) => {
-                    c_conf.credentials.authentication.ds_data = ds.as_ptr() as _;
+                PrivateKeyProvider::DigitalSignature(ds) => {
+                    c_conf.credentials.authentication.ds_data = unsafe { ds.as_ptr() as _ };
                 }
             }
 
