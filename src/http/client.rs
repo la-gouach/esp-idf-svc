@@ -167,13 +167,13 @@ impl EspHttpConnection {
             native_config.client_cert_len = cert.as_esp_idf_raw_len();
 
             match private_key {
-                PrivateKeyProvider::Pem(key) => {
-                    native_config.client_key_pem = key.as_esp_idf_raw_ptr() as _;
-                    native_config.client_key_len = key.as_esp_idf_raw_len();
+                PrivateKeyProvider::Pem(private_key) => {
+                    native_config.client_key_pem = private_key.as_esp_idf_raw_ptr() as _;
+                    native_config.client_key_len = private_key.as_esp_idf_raw_len();
                 }
                 #[cfg(all(esp_idf_comp_espressif__esp_secure_cert_mgr_enabled, esp32s3))]
                 PrivateKeyProvider::DigitalSignature(ds) => {
-                    native_config.ds_data = unsafe { ds.as_ptr() };
+                    native_config.ds_data = unsafe { ds.as_ptr() as _ };
                 }
             }
         }
