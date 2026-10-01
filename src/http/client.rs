@@ -78,7 +78,6 @@ pub struct Configuration<'a> {
     pub follow_redirects_policy: FollowRedirectsPolicy,
     pub server_certificate: Option<X509<'static>>,
     pub client_certificate: Option<X509<'static>>,
-    pub server_certificate: Option<X509<'static>>,
     pub private_key: Option<PrivateKeyProvider<'a>>,
     pub use_global_ca_store: bool,
     pub crt_bundle_attach: Option<unsafe extern "C" fn(conf: *mut core::ffi::c_void) -> esp_err_t>,
